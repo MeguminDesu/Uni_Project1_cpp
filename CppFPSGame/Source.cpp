@@ -93,19 +93,27 @@ private:
 
 
 public:
-	int board_offsetx = 11,
-		board_offsety = 1;
+	struct Cell
+	{
+		bool walls[4] = { true, true, true, true };
+	};
 
-	int board[48][18];
+
+	int board_offsetx = 11,
+		board_offsety = 2;
+
+	int boardSizex = 32,
+		boardSizey = 12;
+	int board[32][12];
 
 	int timer = 60;
 	int timer_m = 60;
 
 	void fill()
 	{
-		for (int i = 0; i < 48; i++)
+		for (int i = 0; i < this->boardSizex; i++)
 		{
-			for (int j = 0; j < 18; j++)
+			for (int j = 0; j < this->boardSizey; j++)
 			{
 				this->board[i][j] = 1;
 			}
@@ -120,6 +128,7 @@ public:
 			// Game Loop Tick
 
 
+			// Reset Frame Timer
 			this->timer = this->timer_m;
 		}
 	}
@@ -127,11 +136,13 @@ public:
 	void render(wchar_t* pScreen)
 	{
 		// Board Outline
+		/*
 		int boardxl = (sizeof(this->board) / sizeof(*this->board));
 		int boardyl = ((sizeof(this->board[0]) / sizeof(*this->board[0])));
 		boardxl *= 2;
 		boardyl *= 2;
 		pix_rect(pScreen, this->board_offsetx, this->board_offsety, boardxl + 2, boardyl + 2, '#', ' ');
+		*/
 
 		/*
 		for (int i = 0; i < boardxl; i++)
@@ -148,6 +159,14 @@ public:
 
 
 		*/
+
+		for (int i = 0; i < this->boardSizex; i++)
+		{
+			for (int j = 0; j < this->boardSizey; j++)
+			{
+				pix_rect(pScreen, i * 3 + this->board_offsetx, j * 3 + this->board_offsety, 3, 3, ((i + j) % 2 == 0) ? '#' : '@', ' ');
+			}
+		}
 	}
 };
 
