@@ -93,32 +93,17 @@ private:
 
 
 public:
-	struct Cell
-	{
-		bool walls[4] = { true, true, true, true };
-	};
-
 
 	int board_offsetx = 11,
 		board_offsety = 2;
 
-	int boardSizex = 32,
-		boardSizey = 12;
-	int board[32][12];
+	int floorSizex = 96;
+
 
 	int timer = 60;
 	int timer_m = 60;
 
-	void fill()
-	{
-		for (int i = 0; i < this->boardSizex; i++)
-		{
-			for (int j = 0; j < this->boardSizey; j++)
-			{
-				this->board[i][j] = 1;
-			}
-		}
-	}
+	Board() { return; }
 
 	void frame()
 	{
@@ -135,38 +120,7 @@ public:
 
 	void render(wchar_t* pScreen)
 	{
-		// Board Outline
-		/*
-		int boardxl = (sizeof(this->board) / sizeof(*this->board));
-		int boardyl = ((sizeof(this->board[0]) / sizeof(*this->board[0])));
-		boardxl *= 2;
-		boardyl *= 2;
-		pix_rect(pScreen, this->board_offsetx, this->board_offsety, boardxl + 2, boardyl + 2, '#', ' ');
-		*/
-
-		/*
-		for (int i = 0; i < boardxl; i++)
-			for (int j = 0; j < boardyl; j++)
-			{
-				int x = floor(i / 2),
-					y = floor(j / 2);
-
-				int ty = this->board[x][y];
-				// pix_rect(pScreen, this->board_offsetx + 1, this->board_offsety + 1, boardxl, boardyl, '@', '@');
-				if (ty == 1) pix_rect(pScreen, this->board_offsetx + 1 + i, this->board_offsety + 1 + j, 1, 1, '@', '@');
-				else if (ty == 2) pix_rect(pScreen, this->board_offsetx + 1 + i, this->board_offsety + 1 + j, 1, 1, 'F', '@');
-			}
-
-
-		*/
-
-		for (int i = 0; i < this->boardSizex; i++)
-		{
-			for (int j = 0; j < this->boardSizey; j++)
-			{
-				pix_rect(pScreen, i * 3 + this->board_offsetx, j * 3 + this->board_offsety, 3, 3, ((i + j) % 2 == 0) ? '#' : '@', ' ');
-			}
-		}
+		pix_rect(pScreen, this->board_offsetx, nScreenHeight - this->board_offsety, this->floorSizex, 1, '#', ' ');
 	}
 };
 
@@ -650,56 +604,59 @@ wchar_t* title_screen(wchar_t* pScreen, int pOption_1)
 	pix_rect(pScreen, 13, 13, 10, 10, '#', '.');
 	pix_rect(pScreen, 15, 15, 10, 10, '#', ' ');
 
-	// B
-	pix_rect(pScreen, 35, 15, 1, 10, '#', ' ');
-	pix_rect(pScreen, 36, 15, 3, 1, '#', ' ');
-	pix_rect(pScreen, 39, 16, 1, 3, '#', ' ');
-	pix_rect(pScreen, 36, 19, 3, 1, '#', ' ');
-	pix_rect(pScreen, 39, 20, 1, 4, '#', ' ');
-	pix_rect(pScreen, 36, 24, 3, 1, '#', ' ');
+	pix_textBlock(pScreen, 35, 13, "Maze");
+	pix_textBlock(pScreen, 35, 19, "Runner");
 
-	// L
-	pix_rect(pScreen, 42, 15, 1, 10, '#', ' ');
-	pix_rect(pScreen, 43, 24, 4, 1, '#', ' ');
+	//// B
+	//pix_rect(pScreen, 35, 15, 1, 10, '#', ' ');
+	//pix_rect(pScreen, 36, 15, 3, 1, '#', ' ');
+	//pix_rect(pScreen, 39, 16, 1, 3, '#', ' ');
+	//pix_rect(pScreen, 36, 19, 3, 1, '#', ' ');
+	//pix_rect(pScreen, 39, 20, 1, 4, '#', ' ');
+	//pix_rect(pScreen, 36, 24, 3, 1, '#', ' ');
 
-	// O
-	pix_rect(pScreen, 49, 15, 1, 10, '#', ' ');
-	pix_rect(pScreen, 50, 15, 3, 1, '#', ' ');
-	pix_rect(pScreen, 50, 24, 3, 1, '#', ' ');
-	pix_rect(pScreen, 53, 15, 1, 10, '#', ' ');
+	//// L
+	//pix_rect(pScreen, 42, 15, 1, 10, '#', ' ');
+	//pix_rect(pScreen, 43, 24, 4, 1, '#', ' ');
 
-	// C
-	pix_rect(pScreen, 56, 15, 1, 10, '#', ' ');
-	pix_rect(pScreen, 57, 15, 4, 1, '#', ' ');
-	pix_rect(pScreen, 57, 24, 4, 1, '#', ' ');
+	//// O
+	//pix_rect(pScreen, 49, 15, 1, 10, '#', ' ');
+	//pix_rect(pScreen, 50, 15, 3, 1, '#', ' ');
+	//pix_rect(pScreen, 50, 24, 3, 1, '#', ' ');
+	//pix_rect(pScreen, 53, 15, 1, 10, '#', ' ');
 
-	// K
-	pix_rect(pScreen, 63, 15, 1, 10, '#', ' ');
+	//// C
+	//pix_rect(pScreen, 56, 15, 1, 10, '#', ' ');
+	//pix_rect(pScreen, 57, 15, 4, 1, '#', ' ');
+	//pix_rect(pScreen, 57, 24, 4, 1, '#', ' ');
 
-	int pix_j = 20;
-	for (int i = 64; pix_j > 15; i++) pix_drawPixel(pScreen, i, --pix_j, '#');
-	pix_j = 20;
-	for (int i = 64; pix_j < 25; i++) pix_drawPixel(pScreen, i, pix_j++, '#');
+	//// K
+	//pix_rect(pScreen, 63, 15, 1, 10, '#', ' ');
+
+	//int pix_j = 20;
+	//for (int i = 64; pix_j > 15; i++) pix_drawPixel(pScreen, i, --pix_j, '#');
+	//pix_j = 20;
+	//for (int i = 64; pix_j < 25; i++) pix_drawPixel(pScreen, i, pix_j++, '#');
 
 
-	// F
-	pix_rect(pScreen, 71, 17, 1, 10, '#', ' ');
-	pix_rect(pScreen, 72, 17, 4, 1, '#', ' ');
-	pix_rect(pScreen, 72, 21, 4, 1, '#', ' ');
+	//// F
+	//pix_rect(pScreen, 71, 17, 1, 10, '#', ' ');
+	//pix_rect(pScreen, 72, 17, 4, 1, '#', ' ');
+	//pix_rect(pScreen, 72, 21, 4, 1, '#', ' ');
 
-	// A
-	pix_rect(pScreen, 78, 17, 1, 10, '#', ' ');
-	pix_rect(pScreen, 79, 17, 4, 1, '#', ' ');
-	pix_rect(pScreen, 79, 21, 4, 1, '#', ' ');
-	pix_rect(pScreen, 83, 17, 1, 10, '#', ' ');
+	//// A
+	//pix_rect(pScreen, 78, 17, 1, 10, '#', ' ');
+	//pix_rect(pScreen, 79, 17, 4, 1, '#', ' ');
+	//pix_rect(pScreen, 79, 21, 4, 1, '#', ' ');
+	//pix_rect(pScreen, 83, 17, 1, 10, '#', ' ');
 
-	// L
-	pix_rect(pScreen, 86, 17, 1, 10, '#', ' ');
-	pix_rect(pScreen, 87, 26, 4, 1, '#', ' ');
+	//// L
+	//pix_rect(pScreen, 86, 17, 1, 10, '#', ' ');
+	//pix_rect(pScreen, 87, 26, 4, 1, '#', ' ');
 
-	// L
-	pix_rect(pScreen, 93, 17, 1, 10, '#', ' ');
-	pix_rect(pScreen, 94, 26, 4, 1, '#', ' ');
+	//// L
+	//pix_rect(pScreen, 93, 17, 1, 10, '#', ' ');
+	//pix_rect(pScreen, 94, 26, 4, 1, '#', ' ');
 
 
 	// Corner Deco
@@ -758,8 +715,6 @@ wchar_t* title_screen(wchar_t* pScreen, int pOption_1)
 
 void gameSetup() {
 	srand(time(NULL));
-
-	// board.fill();
 }
 
 bool runSimulation = false;
