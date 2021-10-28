@@ -1,3 +1,1 @@
-﻿  Source.cpp
-C:\Users\lup0201\Desktop\Uni_Project1_cpp-main\CppFPSGame\Source.cpp(717,12): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
-  CppFPSGame.vcxproj -> C:\Users\lup0201\Desktop\Uni_Project1_cpp-main\x64\Debug\CppFPSGame.exe
+﻿  CppFPSGame.vcxproj -> C:\Users\lup0201\Downloads\New folder\Uni_Project1_cpp-main\x64\Debug\CppFPSGame.exe

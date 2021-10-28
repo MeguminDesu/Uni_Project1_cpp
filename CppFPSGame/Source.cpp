@@ -97,30 +97,241 @@ public:
 	int board_offsetx = 11,
 		board_offsety = 2;
 
-	int floorSizex = 96;
-
+	int boardSizex = 32;
+	int boardSizey = 12;
 
 	int timer = 60;
 	int timer_m = 60;
 
-	Board() { return; }
+	struct Player {
+		int posx = 0;
+		int posy = 0;
+		char c = '^';
+	} player;
 
-	void frame()
-	{
-		if (this->timer > 0)--this->timer;
-		else
+	class Cell {
+	public:
+		int x, y;
+		char c = ' ';
+
+		bool walltop = true;
+		bool wallrig = true;
+		bool walllef = true;
+		bool wallbot = true;
+
+		bool visited = false;
+
+		Cell() {}
+		Cell(int x, int y) { this->x = x; this->y = y; }
+		void render(wchar_t* pScreen, int offx, int offy)
 		{
-			// Game Loop Tick
-
-
-			// Reset Frame Timer
-			this->timer = this->timer_m;
+			pix_rect(pScreen, this->x * 3 + offx, this->y * 3 + offy, 3, 3, 'X', ' ');
+			if (!this->walltop) pix_drawPixel(pScreen, this->x * 3 + offx + 1, this->y * 3 + offy, ' ');
+			if (!this->wallrig) pix_drawPixel(pScreen, this->x * 3 + offx + 2, this->y * 3 + offy + 1, ' ');
+			if (!this->walllef) pix_drawPixel(pScreen, this->x * 3 + offx, this->y * 3 + offy + 1, ' ');
+			if (!this->wallbot) pix_drawPixel(pScreen, this->x * 3 + offx + 1, this->y * 3 + offy + 2, ' ');
 		}
+	};
+
+	Cell cells[32][12];
+
+	Board() {
+		return;
+	}
+
+	void fill()
+	{
+		for (int i = 0; i < this->boardSizex; i++)
+		{
+			for (int j = 0; j < this->boardSizey; j++)
+			{
+				cells[i][j] = Cell(i, j);
+			}
+		}
+	}
+
+	struct coord {
+		int x = 0;
+		int y = 0;
+		coord(int x, int y)
+		{
+			this->x = x;
+			this->y = y;
+		}
+	};
+
+	void generate(int x, int y)
+	{
+		if  (cells[x][y].visited)  return;
+		else cells[x][y].visited = true;
+
+		std::cout << "> " << x << "|" << y << std::endl;
+		std::vector<coord> valid = std::vector<coord>();
+		// Get all VALID neighbours
+		if (!(x - 1 < 0                )) { if (this->cells[x - 1][y].visited == false) { valid.push_back(coord(x - 1, y)); } }
+		if (!(x + 1 >= this->boardSizex)) { if (this->cells[x + 1][y].visited == false) { valid.push_back(coord(x + 1, y)); } }
+		if (!(y - 1 < 0                )) { if (this->cells[x][y - 1].visited == false) { valid.push_back(coord(x, y - 1)); } }
+		if (!(y + 1 >= this->boardSizey)) { if (this->cells[x][y + 1].visited == false) { valid.push_back(coord(x, y + 1)); } }
+		for (coord c : valid) std::cout << c.x << "|" << c.y << std::endl;
+		std::cout << "-----" << std::endl;
+		
+		// Pick Random VALID
+		while (valid.size() > 0)
+		{
+			int r = this->get_random_num(0, valid.size() - 1);
+			coord c = valid.at(r);
+
+			int xd = x - c.x;
+			int yd = y - c.y;
+
+			// REMOVE WALLS BETWEEN THIS AND VALID
+			if (xd == 1) {
+				cells[c.x][c.y].c = '>';
+			}
+			else if (xd == -1) {
+				cells[c.x][c.y].c = '<';
+			}
+
+			else if (yd == 1) {
+				cells[c.x][c.y].c = 'v';
+			}
+			else if (yd == -1) {
+				cells[c.x][c.y].c = '^';
+			}
+			
+			
+			// Generate(VALID.x, valid.Y)
+			valid.erase(r + valid.begin());
+			this->generate(c.x, c.y);
+		}
+	}
+
+	void breakWalls()
+	{
+		for (int i = 0; i < this->boardSizex; i++)
+		{
+			for (int j = 0; j < this->boardSizey; j++)
+			{
+				char c = this->cells[i][j].c;
+
+				if (c == '^')
+				{
+					try {
+						this->cells[i][j].walltop = false;
+						this->cells[i][j - 1].wallbot = false;
+					}
+					catch (std::exception ex) {}
+				}
+				if (c == 'v')
+				{
+					try {
+						this->cells[i][j    ].wallbot = false;
+						this->cells[i][j + 1].walltop = false;
+					}
+					catch (std::exception ex) {}
+				}
+
+				if (c == '<')
+				{
+					try {
+						this->cells[i][j].walllef = false;
+						this->cells[i - 1][j].wallrig = false;
+					}
+					catch (std::exception ex) {}
+				}
+				if (c == '>')
+				{
+					try {
+						this->cells[i][j].wallrig = false;
+						this->cells[i + 1][j].walllef = false;
+					}
+					catch (std::exception ex) {}
+				}
+			}
+		}
+
+		cells[this->boardSizex - 1][this->boardSizey - 1].wallrig = false;
+	}
+
+	void reset()
+	{
+		this->fill();
+		this->generate(0, 0);
+		this->breakWalls();
+	}
+
+	void frame(wchar_t* pScreen, int dx, int dy)
+	{
+		Cell cc = this->cells[this->player.posx][this->player.posy];
+		if(dy == -1 // top
+		&& cc.walltop == false)
+		{
+			this->player.posy -= 1;
+		}
+		if (dy == 1 // top
+			&& cc.wallbot == false)
+		{
+			this->player.posy += 1;
+		}
+
+		if (dx == -1 // top
+			&& cc.walllef == false)
+		{
+			this->player.posx -= 1;
+		}
+		if (dx == 1 // top
+			&& cc.wallrig == false)
+		{
+			this->player.posx += 1;
+		}
+
+		if (this->player.posx == this->boardSizex && this->player.posy == this->boardSizey - 1)
+		{
+			this->player.posx = 0;
+			this->player.posy = 0;
+			this->reset();
+		}
+
+		this->timer = this->timer_m;
+		return;
 	}
 
 	void render(wchar_t* pScreen)
 	{
-		pix_rect(pScreen, this->board_offsetx, nScreenHeight - this->board_offsety, this->floorSizex, 1, '#', ' ');
+		if (pix_kb.w == true) {
+			this->player.c = '^';
+			if (this->timer > 0) { this->timer--; }
+			else { this->frame(pScreen, 0, -1); }
+		}
+		else if (pix_kb.a == true) {
+			this->player.c = '<';
+			if (this->timer > 0) { this->timer--; }
+			else { this->frame(pScreen, -1, 0); }
+		}
+		else if (pix_kb.s == true) {
+			this->player.c = 'v';
+			if (this->timer > 0) { this->timer--; }
+			else { this->frame(pScreen, 0, 1); }
+		}
+		else if (pix_kb.d == true) {
+			this->player.c = '>';
+			if (this->timer > 0) { this->timer--; }
+			else { this->frame(pScreen, 1, 0); }
+		}
+
+
+		// pix_rect(pScreen, this->board_offsetx, this->board_offsety, this->boardSizex, this->boardSizey, '#', ' ');
+
+		// Draw Cells & Player
+		for (int i = 0; i < this->boardSizex; i++)
+		{
+			for (int j = 0; j < this->boardSizey; j++)
+			{
+				cells[i][j].render(pScreen, this->board_offsetx, this->board_offsety);
+			}
+		}
+
+		pix_drawPixel(pScreen, (this->player.posx * 3) + this->board_offsetx + 1, (this->player.posy * 3) + this->board_offsety + 1, this->player.c);
 	}
 };
 
@@ -221,9 +432,9 @@ wchar_t* pix_drawPixel(wchar_t* pScreen, int pX, int pY)
 wchar_t* pix_drawPixel(wchar_t* pScreen, int pX, int pY, char pC)
 {
 	int nLoc = pY * nScreenWidth + pX;
-	if(pX > nScreenWidth
-	|| pY > nScreenHeight
-	|| nLoc >= nScreenWidth * nScreenHeight)
+	if (pX > nScreenWidth
+		|| pY > nScreenHeight
+		|| nLoc >= nScreenWidth * nScreenHeight)
 		return pScreen;
 	else
 		pScreen[pY * nScreenWidth + pX] = pC;
@@ -237,9 +448,11 @@ wchar_t* pix_background(wchar_t* pScreen)
 }
 wchar_t* pix_background(wchar_t* pScreen, char pC)
 {
-	for (int i = 0; i < nScreenWidth; i++) { for (int j = 0; j < nScreenHeight; j++) {
-		pix_drawPixel(pScreen, i, j, pC);
-	} }
+	for (int i = 0; i < nScreenWidth; i++) {
+		for (int j = 0; j < nScreenHeight; j++) {
+			pix_drawPixel(pScreen, i, j, pC);
+		}
+	}
 	return pScreen;
 }
 
@@ -252,15 +465,17 @@ wchar_t* pix_rect(wchar_t* pScreen, int pX, int pY, int pSx, int pSy, char pO, c
 	*/
 
 	std::vector<pix_coord> coor = std::vector<pix_coord>();
-	for (int i = pX; i < pX + pSx; i++) { if (i >= nScreenWidth) continue;
-		for (int j = pY; j < pY + pSy; j++) { if (j >= nScreenHeight) continue;
+	for (int i = pX; i < pX + pSx; i++) {
+		if (i >= nScreenWidth) continue;
+		for (int j = pY; j < pY + pSy; j++) {
+			if (j >= nScreenHeight) continue;
 			pix_coord px = pix_coord();
 			px.x = i;
 			px.y = j;
 			px.c = ((i == pX || i == pX + pSx - 1)
-				 || (j == pY || j == pY + pSy - 1) ? pO : pF);
+				|| (j == pY || j == pY + pSy - 1) ? pO : pF);
 			coor.push_back(px);
-		} 
+		}
 	}
 
 	for (const pix_coord pc : coor)
@@ -583,11 +798,11 @@ wchar_t* pix_textBlock(wchar_t* pScreen, int pX, int pY, std::string pText)
 			pix_text(pScreen, pX, pY++, c);
 		}
 		pY = yStart;
-		if(s == 'M' || s == 'm'
-		|| s == 'N' || s == 'n'
-		|| s == 'V' || s == 'v'
-		|| s == 'W' || s == 'w'
-		|| s == 'X' || s == 'x')
+		if (s == 'M' || s == 'm'
+			|| s == 'N' || s == 'n'
+			|| s == 'V' || s == 'v'
+			|| s == 'W' || s == 'w'
+			|| s == 'X' || s == 'x')
 			++pX;
 
 		pX += 5;
@@ -660,11 +875,11 @@ wchar_t* title_screen(wchar_t* pScreen, int pOption_1)
 
 
 	// Corner Deco
-	pix_rect(pScreen, 0,   0, nScreenWidth      , 1, '#', ' ');
-	pix_rect(pScreen, 20,  1, nScreenWidth - 20 , 1, '#', ' ');
-	pix_rect(pScreen, 40,  2, nScreenWidth - 40 , 1, '#', ' ');
-	pix_rect(pScreen, 60,  3, nScreenWidth - 60 , 1, '#', ' ');
-	pix_rect(pScreen, 80,  4, nScreenWidth - 80 , 1, '#', ' ');
+	pix_rect(pScreen, 0, 0, nScreenWidth, 1, '#', ' ');
+	pix_rect(pScreen, 20, 1, nScreenWidth - 20, 1, '#', ' ');
+	pix_rect(pScreen, 40, 2, nScreenWidth - 40, 1, '#', ' ');
+	pix_rect(pScreen, 60, 3, nScreenWidth - 60, 1, '#', ' ');
+	pix_rect(pScreen, 80, 4, nScreenWidth - 80, 1, '#', ' ');
 	pix_rect(pScreen, 100, 5, nScreenWidth - 100, 1, '#', ' ');
 
 	pix_rect(pScreen, 0, nScreenHeight - 1, 60, 1, '#', ' ');
@@ -706,7 +921,7 @@ wchar_t* title_screen(wchar_t* pScreen, int pOption_1)
 	pix_text(pScreen, 62, 26, "Exit");
 
 	// Name
-	pix_text(pScreen, nScreenWidth-1-23, 39, "< Luke Poulter | 2021 >");
+	pix_text(pScreen, nScreenWidth - 1 - 23, 39, "< Luke Poulter | 2021 >");
 
 	return pScreen;
 }
@@ -715,12 +930,14 @@ wchar_t* title_screen(wchar_t* pScreen, int pOption_1)
 
 void gameSetup() {
 	srand(time(NULL));
+	board.fill();
+	board.generate(10, 10);
+	board.breakWalls();
+	system("pause");
 }
 
-bool runSimulation = false;
 wchar_t* gameFrame(wchar_t* pScreen)
 {
-	if (runSimulation) board.frame();
 	board.render(pScreen);
 
 	return pScreen;
