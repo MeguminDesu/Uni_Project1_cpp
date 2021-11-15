@@ -65,7 +65,7 @@ struct _s_title {
 	int selected = 0;
 	int selected_m = 2;
 	int change_delay = 0;
-	int change_delay_m = 100;
+	int change_delay_m = 150;
 } s_title;
 
 struct _s_options {
@@ -77,7 +77,7 @@ struct _s_options {
 
 struct _s_game {
 	int change_delay = 0;
-	int change_delay_m = 100;
+	int change_delay_m = 150;
 } s_game;
 
 ////////////////////////////////////////
@@ -100,8 +100,13 @@ public:
 	int boardSizex = 32;
 	int boardSizey = 12;
 
-	int timer = 60;
-	int timer_m = 60;
+	int timer = 30;
+	int timer_m = 30;
+
+	int gamescore = 0;
+	int gametimer = 30; // Seconds
+	int gametimer_m = 30;
+	int gamelastsecond = 0;
 
 	struct Player {
 		int posx = 0;
@@ -113,6 +118,7 @@ public:
 	public:
 		int x, y;
 		char c = ' ';
+		char wallchar = '#';
 
 		bool walltop = true;
 		bool wallrig = true;
@@ -125,7 +131,7 @@ public:
 		Cell(int x, int y) { this->x = x; this->y = y; }
 		void render(wchar_t* pScreen, int offx, int offy)
 		{
-			pix_rect(pScreen, this->x * 3 + offx, this->y * 3 + offy, 3, 3, 'X', ' ');
+			pix_rect(pScreen, this->x * 3 + offx, this->y * 3 + offy, 3, 3, this->wallchar, ' ');
 			if (!this->walltop) pix_drawPixel(pScreen, this->x * 3 + offx + 1, this->y * 3 + offy, ' ');
 			if (!this->wallrig) pix_drawPixel(pScreen, this->x * 3 + offx + 2, this->y * 3 + offy + 1, ' ');
 			if (!this->walllef) pix_drawPixel(pScreen, this->x * 3 + offx, this->y * 3 + offy + 1, ' ');
@@ -208,6 +214,7 @@ public:
 
 	void breakWalls()
 	{
+		++this->gamescore;
 		for (int i = 0; i < this->boardSizex; i++)
 		{
 			for (int j = 0; j < this->boardSizey; j++)
@@ -321,6 +328,17 @@ public:
 
 
 		// pix_rect(pScreen, this->board_offsetx, this->board_offsety, this->boardSizex, this->boardSizey, '#', ' ');
+
+		std::string gs = std::to_string(this->gamescore);
+		if (gs.length() < 2) gs = "0" + gs;
+
+		pix_textBlock(pScreen, 3, 1, "L");
+		pix_textBlock(pScreen, 3, 7, "E");
+		pix_textBlock(pScreen, 3, 13, "V");
+		pix_textBlock(pScreen, 3, 19, "E");
+		pix_textBlock(pScreen, 3, 25, "L");
+		pix_textBlock(pScreen, 1, 31, gs);
+
 
 		// Draw Cells & Player
 		for (int i = 0; i < this->boardSizex; i++)
@@ -702,6 +720,86 @@ namespace pixCharBlock {
 		"#   ",
 		"####"
 	};
+
+	std::vector<std::string> one = std::vector<std::string>{
+		"  # ",
+		" ## ",
+		"  # ",
+		"  # ",
+		" ###"
+	};
+
+	std::vector<std::string> two = std::vector<std::string>{
+		" ## ",
+		"   #",
+		" ## ",
+		"#   ",
+		" ## "
+	};
+
+	std::vector<std::string> three = std::vector<std::string>{
+		"### ",
+		"   #",
+		" ## ",
+		"   #",
+		"### "
+	};
+
+	std::vector<std::string> four = std::vector<std::string>{
+		"  ##",
+		" # #",
+		"####",
+		"   #",
+		"   #"
+	};
+
+	std::vector<std::string> five = std::vector<std::string>{
+		" ## ",
+		"#   ",
+		" ## ",
+		"   #",
+		" ## "
+	};
+
+	std::vector<std::string> six = std::vector<std::string>{
+		" ## ",
+		"#   ",
+		" ## ",
+		"#  #",
+		" ## "
+	};
+
+	std::vector<std::string> seven = std::vector<std::string>{
+		"####",
+		"   #",
+		"  # ",
+		" #  ",
+		"#   "
+	};
+
+	std::vector<std::string> eight = std::vector<std::string>{
+		" ## ",
+		"#  #",
+		" ## ",
+		"#  #",
+		" ## "
+	};
+
+	std::vector<std::string> nine = std::vector<std::string>{
+		" ## ",
+		"#  #",
+		" ## ",
+		"   #",
+		" ## "
+	};
+
+	std::vector<std::string> zero = std::vector<std::string>{
+		" ## ",
+		"#  #",
+		"#  #",
+		"#  #",
+		" ## "
+	};
 };
 std::vector<std::string> pix_getCharBlock(char pChar)
 {
@@ -784,6 +882,26 @@ std::vector<std::string> pix_getCharBlock(char pChar)
 	case 'z':
 	case 'Z':
 		return pixCharBlock::Z;
+	case '1':
+		return pixCharBlock::one;
+	case '2':
+		return pixCharBlock::two;
+	case '3':
+		return pixCharBlock::three;
+	case '4':
+		return pixCharBlock::four;
+	case '5':
+		return pixCharBlock::five;
+	case '6':
+		return pixCharBlock::six;
+	case '7':
+		return pixCharBlock::seven;
+	case '8':
+		return pixCharBlock::eight;
+	case '9':
+		return pixCharBlock::nine;
+	case '0':
+		return pixCharBlock::zero;
 
 	default: return std::vector<std::string>{"    ", "    ", "    ", "    ", "    "};
 	}
@@ -933,7 +1051,7 @@ void gameSetup() {
 	board.fill();
 	board.generate(10, 10);
 	board.breakWalls();
-	system("pause");
+	// system("pause");
 }
 
 wchar_t* gameFrame(wchar_t* pScreen)

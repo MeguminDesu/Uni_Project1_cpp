@@ -1,1 +1,4 @@
-﻿  CppFPSGame.vcxproj -> C:\Users\lup0201\Downloads\New folder\Uni_Project1_cpp-main\x64\Debug\CppFPSGame.exe
+﻿  Source.cpp
+C:\Users\lup0201\Desktop\Uni_Project1_cpp-main\CppFPSGame\Source.cpp(187,1): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\lup0201\Desktop\Uni_Project1_cpp-main\CppFPSGame\Source.cpp(1050,12): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
+  CppFPSGame.vcxproj -> C:\Users\lup0201\Desktop\Uni_Project1_cpp-main\x64\Debug\CppFPSGame.exe
